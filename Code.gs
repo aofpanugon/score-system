@@ -17,7 +17,7 @@ const DEFAULT_PIN = '123456';
 const MAX_FAILS = 5;          // กรอก PIN ผิดครบกี่ครั้งจึงล็อก
 const LOCK_SECONDS = 900;     // ล็อก 15 นาที
 const MAX_FILES = 5, MAX_BYTES = 25 * 1024 * 1024;
-const SPECIAL = ['ขร.', '0', 'สม.', 'มผ.', 'ผ.'];
+const SPECIAL = ['ร.', '0', 'มส.', 'มผ.', 'ผ.'];
 const BLOCKED_EXT = /\.(exe|bat|cmd|com|msi|scr|vbs|js|jar|ps1|sh|apk|dll|lnk|hta|reg)$/i;
 
 /** นิยามชีต: h = หัวคอลัมน์, txt = คอลัมน์ที่ต้องเก็บเป็นข้อความ (กันเลขศูนย์นำหน้า เช่น 02900 หาย) */
