@@ -1,0 +1,11 @@
+{
+  "name": "score-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ระบบเก็บคะแนนและส่งงานออนไลน์ (หน้าเว็บบน GitHub Pages + Google Apps Script)",
+  "scripts": {
+    "test": "node tests/api-test.js",
+    "dev": "node tests/gas-fake.js"
+  },
+  "engines": { "node": ">=18" }
+}

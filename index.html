@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="th"><head><base target="_top"><meta charset="utf-8">
+<meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ระบบเก็บคะแนนและส่งงานออนไลน์</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--navy:#1e3a8a;--gold:#fbbf24}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{zoom:.8} /* ย่อทั้งระบบลง 20% */
+body{margin:0;font:400 17px/1.6 Prompt,sans-serif;color:var(--ink);background:#eef3fb;min-height:100vh}
+
+/* ---------- พื้นหลัง ---------- */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(160deg,#f5f8fd,#e3ebf8 50%,#f6f1e3)}
+.bg::before{content:"";position:absolute;inset:-44px;background-image:linear-gradient(#1e3a8a14 1px,transparent 1px),linear-gradient(90deg,#1e3a8a14 1px,transparent 1px);background-size:44px 44px;animation:grid 14s linear infinite;-webkit-mask-image:radial-gradient(ellipse at 50% 0,#000,transparent 80%);mask-image:radial-gradient(ellipse at 50% 0,#000,transparent 80%)}
+.bg::after{content:"";position:absolute;top:-30%;left:-60%;width:40%;height:160%;background:linear-gradient(90deg,transparent,#ffffff99,transparent);transform:rotate(18deg);animation:sheen 16s ease-in-out infinite}
+.bg i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:fl 22s ease-in-out infinite alternate}
+.bg i:nth-child(1){width:540px;height:540px;left:-120px;top:-100px;background:#8fb0ff}
+.bg i:nth-child(2){width:480px;height:480px;right:-100px;top:28%;background:#fcd88b;animation-delay:-8s}
+.bg i:nth-child(3){width:440px;height:440px;left:32%;bottom:-170px;background:#a5b4fc;animation-delay:-14s}
+.bg b{position:absolute;border:2px solid #1e3a8a1f;border-radius:50%;animation:ring 18s ease-in-out infinite alternate}
+.bg b:nth-of-type(1){width:300px;height:300px;right:8%;top:10%}
+.bg b:nth-of-type(2){width:180px;height:180px;left:6%;bottom:14%;animation-delay:-6s;border-color:#d9770622}
+@keyframes grid{to{transform:translate(44px,44px)}}
+@keyframes sheen{0%,55%{left:-60%}100%{left:130%}}
+@keyframes fl{to{transform:translate(70px,45px) scale(1.12)}}
+@keyframes ring{to{transform:translate(-30px,40px) scale(1.15)}}
+@media(prefers-reduced-motion:reduce){.bg i,.bg b,.bg::before,.bg::after,.shake,.go::after{animation:none!important}}
+
+/* ---------- ส่วนหัว: โลโก้+ชื่อชิดซ้าย / ไอคอนเมนูชิดขวา ---------- */
+header{background:linear-gradient(90deg,#1e3a8a,#312e81 60%,#0f172a);color:#fff;position:sticky;top:0;z-index:5;box-shadow:0 6px 18px rgba(15,23,42,.35);border-bottom:3px solid var(--gold)}
+.bar{max-width:1250px;margin:auto;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.brand{display:flex;align-items:center;gap:14px;margin-right:auto;min-width:0}
+.brand h1{margin:0;font-size:1.55rem;line-height:1.2}
+.brand .tag{display:block;color:#fde68a;font-size:1.02rem;font-weight:400}.brand small{display:block;color:#bfdbfe;font-size:.92rem}
+.brand img{height:68px;max-width:150px;object-fit:contain;border-radius:18px;background:#fff;padding:5px;box-shadow:0 4px 0 #0003,0 8px 16px #0004}
+nav{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:7px 9px;border-radius:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);margin-left:auto}
+nav button{position:relative;display:flex;align-items:center;gap:10px;border:0;border-radius:18px;padding:6px 18px 6px 6px;background:none;color:#e0ecff;font:600 1.08rem Prompt;cursor:pointer;transition:.15s}
+nav button:hover{background:rgba(255,255,255,.12)}
+nav button[aria-current=true]{background:#fff;color:#1e3a8a;box-shadow:0 5px 14px rgba(0,0,0,.3)}
+nav button[aria-current=true]::after{content:"";position:absolute;left:22%;right:22%;bottom:-9px;height:4px;border-radius:4px;background:var(--gold)}
+.sep{width:2px;align-self:stretch;margin:3px 4px;background:linear-gradient(#fff0,#fff6,#fff0)}
+main{max-width:1250px;margin:auto;padding:24px 16px 70px}
+.demo{background:#fef3c7;color:#92400e;border-radius:14px;padding:8px 14px;margin-bottom:14px;font-size:.95rem;border:1px solid #fcd34d}
+/* ---------- ภาพหน้าปก ---------- */
+.hero{max-width:1250px;margin:18px auto 0;padding:0 16px}
+.hero-in{position:relative;height:clamp(170px,26vw,300px);border-radius:26px;overflow:hidden;background:linear-gradient(120deg,#1e3a8a,#4338ca 55%,#0f172a);box-shadow:0 0 0 4px #fff,0 20px 36px -16px rgba(15,23,42,.6)}
+.sl{position:absolute;inset:0;opacity:0;transition:opacity .9s ease;background:center/cover no-repeat;pointer-events:none}
+.sl.on{opacity:1;pointer-events:auto;animation:kb 10s ease-out both}
+.sl::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,23,42,.82),rgba(15,23,42,.1) 75%)}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.06)}}
+.cap{position:absolute;z-index:2;left:clamp(64px,6vw,90px);bottom:clamp(18px,4vw,40px);right:100px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.cap h2{margin:0 0 4px;font-size:clamp(1.3rem,3.2vw,2.2rem);line-height:1.2}.cap p{margin:0;font-size:clamp(1rem,1.8vw,1.3rem);color:#fde68a}
+.ar{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:1.8rem;line-height:1;cursor:pointer;backdrop-filter:blur(4px)}
+.ar:hover{background:rgba(255,255,255,.4)}.ar.l{left:12px}.ar.r{right:12px}
+.dots{position:absolute;z-index:3;right:70px;bottom:16px;display:flex;gap:8px}
+.dots button{width:12px;height:12px;padding:0;border:0;border-radius:8px;background:rgba(255,255,255,.55);cursor:pointer;transition:.25s}.dots button.on{width:32px;background:#fbbf24}
+.bn{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px}.bn img{width:190px;height:70px;object-fit:cover;border-radius:12px;background:#e2e8f0}
+.b.unrec{background:#f1f5f9;color:#64748b}
+@media(prefers-reduced-motion:reduce){.sl.on{animation:none}}
+
+/* ---------- การ์ด ฟอร์ม ปุ่ม ---------- */
+.card{background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-radius:22px;padding:24px;margin-bottom:18px;box-shadow:0 2px 0 var(--line),0 14px 26px -14px rgba(30,41,59,.3)}
+.card.c{max-width:700px;margin-inline:auto}h2{margin:0 0 6px;font-size:1.7rem}h3{margin:0 0 12px;font-size:1.15rem;display:flex;align-items:center;gap:10px}.mut{color:var(--mut);font-size:1rem}
+.in{width:100%;padding:15px 16px;border:2px solid #cbd5e1;border-radius:16px;font:inherit;font-size:1.08rem;background:#fff}.in:focus{outline:3px solid var(--gold);outline-offset:1px}
+label{display:block;font-weight:600;font-size:1.02rem;margin:16px 0 6px}
+.btn{--b:#2563eb;--d:#1e40af;display:inline-flex;align-items:center;gap:10px;border:0;border-radius:16px;padding:12px 22px;color:#fff;font:600 1.1rem Prompt;text-decoration:none;background:linear-gradient(var(--b),var(--d));box-shadow:inset 0 1px 0 #fff5,0 4px 0 #0003,0 8px 14px rgba(15,23,42,.2);cursor:pointer}
+.btn:active{transform:translateY(3px);box-shadow:inset 0 1px 0 #fff5,0 1px 0 #0003}.btn:disabled{opacity:.5}
+.btn.g{--b:#22c55e;--d:#15803d}.btn.r{--b:#fb7185;--d:#be123c}.btn.s{--b:#94a3b8;--d:#475569}.btn.a{--b:#fbbf24;--d:#d97706;color:#1e1b4b}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:180px}.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.stat{border-radius:18px;padding:16px;background:#f8fafc;text-align:center;font-size:1.05rem;box-shadow:0 2px 0 var(--line)}.stat b{display:block;font-size:1.9rem}.stat .i3d{margin-bottom:6px}
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tabs button{display:flex;align-items:center;gap:10px;border:0;background:none;padding:10px 18px;font:600 1.1rem Prompt;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tabs button[aria-selected=true]{color:#2563eb;border-color:#2563eb}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:1.02rem}th{background:#f1f5f9;text-align:left}th,td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.b{display:inline-block;border-radius:99px;padding:3px 12px;font-size:.85rem;font-weight:600;background:#e2e8f0}
+.b.graded{background:#d1fae5;color:#065f46}.b.pending{background:#fef3c7;color:#92400e}.b.none{background:#f1f5f9;color:#64748b}.b.late{background:#ffedd5;color:#9a3412}.b.ok{background:#dbeafe;color:#1e40af}.b.t{background:#ede9fe;color:#5b21b6}
+.grade{width:90px;height:90px;border-radius:26px;display:grid;place-content:center;text-align:center;color:#fff;font-weight:700;font-size:1.9rem;background:linear-gradient(#60a5fa,#1d4ed8);box-shadow:inset 0 2px 2px #fff6,inset 0 -4px 6px #0003,0 5px 0 #1e3a8a}
+.grade small{font-size:.75rem;font-weight:400}.grade.bad{background:linear-gradient(#fb7185,#be123c);box-shadow:inset 0 2px 2px #fff6,inset 0 -4px 6px #0003,0 5px 0 #881337}
+.bar2{height:12px;border-radius:9px;background:#e2e8f0;overflow:hidden}.bar2 i{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#10b981)}
+.pill{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;padding:6px 14px;font:600 .95rem Prompt;background:#e2e8f0;cursor:pointer}.pill.on{background:#2563eb;color:#fff}
+.drop{display:block;border:2px dashed #94a3b8;border-radius:20px;padding:22px;text-align:center;cursor:pointer;background:#f8fafc;font-size:1.05rem}
+.pend{border-left:6px solid #f59e0b}.pend.late{border-left-color:#e11d48}.pend.sel{outline:3px solid #2563eb}
+.pend p{margin:8px 0}.pick{background:#eff6ff;border-radius:14px;padding:10px 14px;margin:6px 0}
+
+/* ---------- ไอคอน 3 มิติ ---------- */
+.i3d{--c1:#7dd3fc;--c2:#2563eb;--c3:#1e3a8a;position:relative;display:inline-flex;align-items:center;justify-content:center;width:3.2em;height:3.2em;flex:none;border-radius:32%;vertical-align:middle;font-size:1rem;background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:inset 0 2px 2px #fff9,inset 0 -3px 5px #0004,0 3px 0 var(--c3),0 7px 12px rgba(15,23,42,.28)}
+.i3d::before{content:"";position:absolute;top:6%;left:10%;right:10%;height:44%;border-radius:60% 60% 50% 50%/80% 80% 40% 40%;background:linear-gradient(#ffffff8c,#fff0)}
+.i3d .g{position:relative;font-size:1.3em;filter:drop-shadow(0 1px 1px #0006)}
+.i3d svg{position:relative;width:62%;height:62%;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #0006)}
+.btn .i3d{font-size:.78rem}.tabs .i3d{font-size:.7rem}.pill .i3d{font-size:.5rem}h2 .i3d,h3 .i3d{font-size:.7rem}
+nav .i3d{font-size:.95rem;width:3.3em;height:3.3em}.stat .i3d{font-size:1.15rem}
+.lp{height:76px;border-radius:16px;background:#f1f5f9;padding:5px;box-shadow:0 2px 0 #cbd5e1}
+
+/* ---------- เข้าสู่ระบบ / PIN ---------- */
+.gate{text-align:center;max-width:460px;padding:30px 26px;border-top:6px solid var(--gold)}
+.gate .big{width:96px;height:96px;font-size:1.6rem;margin-bottom:10px}
+.gate .glogo{height:96px;max-width:200px;object-fit:contain;border-radius:22px;background:#fff;padding:6px;box-shadow:0 4px 0 #cbd5e1,0 12px 20px #0f172a33;margin-bottom:10px}
+.gate h2{font-size:1.9rem}
+.pinbox{display:flex;gap:10px;justify-content:center;margin:18px 0}
+.pinbox i{width:54px;height:68px;border-radius:16px;background:#f1f5f9;border:2px solid #cbd5e1;display:grid;place-content:center;font:700 1.9rem Prompt;font-style:normal;box-shadow:inset 0 3px 6px #0001;transition:.15s;color:#1e3a8a}
+.pinbox i.f{background:#eff6ff;border-color:#60a5fa}
+.pinbox i.on{border-color:#2563eb;box-shadow:0 0 0 4px #2563eb33,inset 0 3px 6px #0001}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:10px auto 18px;max-width:340px}
+.pad button{height:76px;border:0;border-radius:20px;font:700 2rem Prompt;color:#1e3a8a;background:linear-gradient(#fff,#dbe5f3);box-shadow:inset 0 2px 0 #fff,0 5px 0 #94a3b8,0 10px 14px #0f172a26;cursor:pointer;transition:transform .08s}
+.pad button:hover{background:linear-gradient(#fff,#cfe0fb)}
+.pad button:active{transform:translateY(5px);box-shadow:inset 0 2px 0 #fff,0 0 0 #94a3b8}
+.pad .k2{font-size:1.15rem;color:#be123c;background:linear-gradient(#fff,#ffe4e6);box-shadow:inset 0 2px 0 #fff,0 5px 0 #fda4af,0 10px 14px #0f172a26}
+.go{position:relative;overflow:hidden;width:100%;max-width:340px;justify-content:center;font-size:1.35rem;padding:14px 20px;border-radius:20px;--b:#3b82f6;--d:#1d4ed8;background:linear-gradient(#60a5fa,#1d4ed8 75%);box-shadow:inset 0 2px 0 #fff6,0 6px 0 #1e3a8a,0 14px 22px rgba(30,58,138,.4)}
+.go:active{transform:translateY(5px);box-shadow:inset 0 2px 0 #fff6,0 1px 0 #1e3a8a}
+.go::after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-90px;background:linear-gradient(90deg,transparent,#ffffff77,transparent);transform:skewX(-20deg);animation:shine 3.4s ease-in-out infinite}
+@keyframes shine{0%,60%{left:-90px}100%{left:120%}}
+.shake{animation:sh .4s}@keyframes sh{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.c-green{--c1:#86efac;--c2:#16a34a;--c3:#14532d}.c-amber{--c1:#fde68a;--c2:#f59e0b;--c3:#92400e}.c-rose{--c1:#fda4af;--c2:#e11d48;--c3:#881337}.c-violet{--c1:#c4b5fd;--c2:#7c3aed;--c3:#4c1d95}.c-teal{--c1:#5eead4;--c2:#0d9488;--c3:#134e4a}.c-slate{--c1:#cbd5e1;--c2:#475569;--c3:#1e293b}.c-blue{--c1:#7dd3fc;--c2:#2563eb;--c3:#1e3a8a}
+#toasts{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:min(92vw,440px);z-index:99;display:grid;gap:8px}
+.toast{display:flex;gap:12px;align-items:center;background:#fff;border-radius:18px;padding:10px 16px;box-shadow:0 3px 0 #cbd5e1,0 14px 30px rgba(15,23,42,.3);white-space:pre-line;font-size:1.02rem}
+.toast .i3d{font-size:.6rem}
+a{color:#1d4ed8}.sm{width:80px}
+@media(max-width:760px){.sep{display:none}nav{width:100%;justify-content:space-between}nav button{flex-direction:column;flex:1;padding:8px 4px;font-size:.8rem;gap:4px}.brand h1{font-size:1.25rem}.pinbox i{width:44px;height:58px;font-size:1.6rem}}
+</style></head><body>
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i><b></b><b></b></div>
+<header><div class="bar">
+ <div class="brand"><img id="logo" alt="โลโก้สถานศึกษา" hidden><span id="logoTile" class="i3d c-amber" style="font-size:1.25rem"><span class="g">🎓</span></span><div><h1 id="ttl">ระบบเก็บคะแนนและส่งงานออนไลน์</h1><span class="tag" id="tag" hidden></span><small id="sch"></small></div></div>
+ <nav>
+  <button data-a="tab" data-v="score" aria-current="true"><span class="i3d"><span class="g">🔍</span></span>ตรวจสอบคะแนน</button>
+  <button data-a="tab" data-v="submit"><span class="i3d c-green"><span class="g">📤</span></span>ส่งงาน</button>
+  <span class="sep"></span>
+  <button data-a="tab" data-v="teacher"><span class="i3d c-amber"><span class="g">🔒</span></span>ครูผู้สอน</button>
+  <button data-a="tab" data-v="admin"><span class="i3d c-violet"><span class="g">🛡️</span></span>แอดมิน</button>
+ </nav></div></header>
+<section id="hero" class="hero"><div id="hero-in" class="hero-in"></div></section>
+<main>
+<div id="demo" class="demo" hidden>🧪 โหมดตัวอย่าง (ยังไม่ได้เชื่อมต่อ Apps Script): นักเรียนทดลอง <b>02900</b> • ครู: รหัส <b>T001</b> • PIN ครูและแอดมิน <b>123456</b></div>
+
+<section id="v-score">
+ <div class="card c"><h2>ค้นหาผลการเรียนและคะแนนเก็บ</h2><p class="mut">กรอกรหัสนักเรียน 5 หลักของตนเอง เช่น 02900 (ข้อมูลแสดงเฉพาะบุคคล)</p>
+  <div class="row"><input id="q" class="in grow" placeholder="เช่น 02900" inputmode="numeric" maxlength="5"><button class="btn" data-a="search"><span class="i3d"><span class="g">🔍</span></span>ค้นหา</button></div></div>
+ <div id="res" hidden></div>
+</section>
+
+<section id="v-submit" hidden><div class="card c"><h2>ส่งงานและแบบฝึกหัดออนไลน์</h2><p class="mut">ค้นหางานค้างของตนเอง ด้วยรหัสนักเรียน 5 หลัก หรือ ชื่อนักเรียน</p>
+ <div class="row"><input id="s-q" class="in grow" placeholder="เช่น 02900 หรือ สมชาย"><button class="btn" data-a="findp"><span class="i3d"><span class="g">🔍</span></span>ค้นหางานค้าง</button></div>
+ <div id="s-match"></div></div>
+ <div id="s-list"></div>
+ <div id="s-form" class="card c" hidden><h3>📤 ส่งงานที่เลือก</h3><div id="s-pick" class="pick"></div>
+  <label>แนบไฟล์ (สูงสุด 5 ไฟล์ รวมไม่เกิน 25 MB)</label>
+  <label class="drop"><span class="i3d c-slate"><span class="g">📎</span></span><div>แตะเพื่อเลือกไฟล์</div><input id="s-file" type="file" multiple hidden></label>
+  <div id="s-files"></div><p><button class="btn g" id="s-go" data-a="submit"><span class="i3d c-green"><span class="g">🚀</span></span>ยืนยันการส่งงาน</button></p></div>
+ <div id="s-rcpt" class="card c" hidden></div>
+</section>
+
+<section id="v-teacher" hidden>
+ <div id="t-gate" class="card c gate"><img id="glogo" class="glogo" alt="" hidden><span id="gtile" class="i3d c-amber big"><span class="g">🔒</span></span><h2>เข้าสู่ระบบครูผู้สอน</h2><p class="mut">กรอกรหัสครู และ PIN 6 หลัก (กดปุ่มตัวเลข 0-9 หรือพิมพ์ด้วยคีย์บอร์ด)</p><input id="t-id" class="in" placeholder="รหัสครู เช่น T001" autocomplete="username" style="text-align:center;max-width:340px;margin:6px auto 0;display:block">
+ <div id="pinbox" class="pinbox" role="group" aria-label="PIN"><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="pad" class="pad"></div>
+ <p><button class="pill" data-a="pshow" data-v="t"><span class="i3d c-slate"><span class="g">👁️</span></span> แสดง/ซ่อนตัวเลข</button></p>
+ <button class="btn go" data-a="login"><span class="i3d c-amber"><span class="g">🔒</span></span>เข้าสู่ระบบ</button></div>
+ <div id="t-app" hidden>
+  <div class="card row" style="justify-content:space-between"><div><h2>แผงควบคุมครู <span id="t-who" class="b t"></span></h2><span class="mut">จัดการรายวิชาของตนเอง ชิ้นงาน ตรวจงาน และสมุดคะแนน</span></div>
+   <div class="row"><a id="l-sh" class="btn g" target="_blank"><span class="i3d c-green"><span class="g">📊</span></span>Google Sheet</a><a id="l-dr" class="btn s" target="_blank"><span class="i3d c-slate"><span class="g">📁</span></span>Drive</a><button class="btn r" data-a="logout">ออกจากระบบ</button></div></div>
+  <div id="stats" class="g2"></div><br>
+  <div id="courses"><div class="tabs" id="t-tabs"><button data-a="ttab" data-v="c" aria-selected="true">รายวิชาของฉัน</button><button data-a="ttab" data-v="s">เปลี่ยน PIN</button></div>
+   <div id="t-c"><p><button class="btn" data-a="newsubj"><span class="i3d c-violet"><span class="g">➕</span></span>เพิ่มรายวิชา</button></p>
+    <div id="sf" class="card" hidden><div class="g2"><div><label>รหัสวิชา</label><input id="f-code" class="in"></div><div><label>ชื่อวิชา</label><input id="f-name" class="in"></div>
+     <div><label>ระดับชั้น</label><input id="f-lv" class="in" placeholder="ปวช.2"></div><div><label>ภาคเรียน</label><input id="f-sem" class="in"></div></div>
+     <p><button class="btn g" data-a="savesubj">บันทึกรายวิชา</button> <button class="btn s" data-a="closesf">ยกเลิก</button></p></div>
+    <div id="clist" class="g2"></div></div>
+   <div id="t-s" hidden class="card c"><h3>🔑 เปลี่ยน PIN เข้าสู่ระบบ</h3><p class="mut">ครูผู้สอนเปลี่ยนได้เฉพาะ PIN ของตนเอง (ตัวเลข 6 หลัก) ส่วนการตั้งค่าระบบทำได้เฉพาะแอดมิน</p>
+    <label>PIN ใหม่ (6 หลัก)</label><input id="cp-1" type="password" inputmode="numeric" maxlength="6" class="in" autocomplete="new-password">
+    <label>ยืนยัน PIN ใหม่</label><input id="cp-2" type="password" inputmode="numeric" maxlength="6" class="in" autocomplete="new-password">
+    <p><button class="btn" data-a="changepin">🔑 บันทึก PIN ใหม่</button></p></div></div>
+  <div id="ws" hidden></div>
+ </div></section>
+
+<section id="v-admin" hidden>
+ <div id="a-gate" class="card c gate"><span class="i3d c-violet big"><span class="g">🛡️</span></span><h2>เข้าสู่ระบบแอดมิน</h2><p class="mut">สำหรับผู้ดูแลระบบ: จัดการสมาชิก ครูผู้สอน นักเรียน และตั้งค่าระบบ</p>
+ <div id="a-pinbox" class="pinbox" role="group" aria-label="PIN แอดมิน"><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="a-pad" class="pad"></div>
+ <p><button class="pill" data-a="pshow" data-v="a"><span class="i3d c-slate"><span class="g">👁️</span></span> แสดง/ซ่อนตัวเลข</button></p>
+ <button class="btn go" data-a="alogin"><span class="i3d c-violet"><span class="g">🛡️</span></span>เข้าสู่ระบบแอดมิน</button></div>
+ <div id="a-app" hidden>
+  <div class="card row" style="justify-content:space-between"><div><h2>แผงควบคุมแอดมิน</h2><span class="mut">จัดการสมาชิก ครู นักเรียน และตั้งค่าทั้งระบบ</span></div><button class="btn r" data-a="alogout">ออกจากระบบ</button></div>
+  <div id="a-stats" class="g2"></div><br>
+  <div class="tabs" id="a-tabs"><button data-a="atab" data-v="u" aria-selected="true">สมาชิก / ครู / นักเรียน</button><button data-a="atab" data-v="b">ภาพหน้าปก</button><button data-a="atab" data-v="s">ตั้งค่าระบบ</button></div>
+  <div id="am-u">
+   <div class="card"><div class="row"><button class="pill on" data-a="afilter" data-v="all">ทั้งหมด</button><button class="pill" data-a="afilter" data-v="teacher">ครูผู้สอน</button><button class="pill" data-a="afilter" data-v="student">นักเรียน</button>
+    <input id="as-q" class="in grow" placeholder="ค้นหาด้วยรหัสหรือชื่อ"><button class="btn g" data-a="unew"><span class="i3d c-green"><span class="g">➕</span></span>เพิ่มสมาชิก</button></div></div>
+   <div id="uf" class="card" hidden><h3>ข้อมูลสมาชิก</h3><div class="g2">
+    <div><label>ประเภท</label><select id="u-role" class="in"><option value="teacher">ครูผู้สอน</option><option value="student">นักเรียน</option></select></div>
+    <div><label id="u-idl">รหัสครู</label><input id="u-id" class="in"></div>
+    <div><label>คำนำหน้า</label><input id="u-pre" class="in" placeholder="นาย / นาง / นางสาว"></div>
+    <div><label>ชื่อ</label><input id="u-name" class="in"></div><div><label>นามสกุล</label><input id="u-sur" class="in"></div>
+    <div class="us"><label>ระดับชั้น/ห้อง</label><input id="u-cls" class="in" placeholder="ปวช.2/1"></div><div class="us"><label>เลขที่</label><input id="u-no" class="in" inputmode="numeric"></div>
+    <div class="ut"><label>PIN ครู (6 หลัก; ว่าง = ไม่เปลี่ยน, ครูใหม่ใช้ 123456)</label><input id="u-pin" type="password" inputmode="numeric" maxlength="6" class="in"></div></div>
+    <p><button class="btn g" data-a="usave">บันทึก</button> <button class="btn s" data-a="uclose">ยกเลิก</button></p></div>
+   <div class="card"><div id="ulist" class="tw"></div></div></div>
+  <div id="am-s" hidden class="card"><h3>ตั้งค่าชื่อระบบ คำโปรย โลโก้ และข้อมูลสถานศึกษา</h3><div class="g2"><div><label>ชื่อระบบ</label><input id="as-t" class="in"></div><div><label>คำโปรยใต้ชื่อระบบ</label><input id="as-g" class="in" maxlength="80"></div><div><label>ชื่อสถานศึกษา</label><input id="as-s" class="in"></div>
+    <div><label>ภาคเรียนปัจจุบัน</label><input id="as-m" class="in"></div><div><label>PIN แอดมินใหม่ (6 หลัก, ว่าง = ไม่เปลี่ยน)</label><input id="as-p" type="password" inputmode="numeric" maxlength="6" class="in"></div>
+    <div style="grid-column:1/-1"><label>โลโก้สถานศึกษา</label><div class="row"><img id="as-lp" class="lp" alt="" hidden><input id="as-lf" type="file" accept="image/png,image/jpeg,image/webp" class="in grow"><button class="btn s" data-a="armlogo">ลบโลโก้</button></div><div class="mut">PNG/JPG/WebP ไม่เกิน 2 MB</div></div></div>
+    <p><button class="btn" data-a="asave"><span class="i3d c-violet"><span class="g">💾</span></span>บันทึกการตั้งค่า</button></p></div>
+<div id="am-b" hidden>
+  <div class="card row" style="justify-content:space-between"><div><h3>🖼️ ภาพหน้าปกระบบ</h3><span class="mut">ภาพจะหมุนเปลี่ยนอัตโนมัติที่ส่วนหัวของระบบ แนะนำภาพแนวนอนอัตราส่วนประมาณ 16:5 (เช่น 1600×500 พิกเซล)</span></div><button class="btn g" data-a="bnew">➕ เพิ่มภาพหน้าปก</button></div>
+  <div id="bf" class="card" hidden><h3 id="bf-h">เพิ่มภาพหน้าปก</h3><div class="g2">
+   <div style="grid-column:1/-1"><label>รูปภาพ (อัปโหลดไฟล์ หรือวางลิงก์ภาพ)</label><div class="row"><img id="bf-p" class="lp" style="height:80px;width:230px;object-fit:cover" alt="" hidden><input id="bf-f" type="file" accept="image/png,image/jpeg,image/webp" class="in grow"></div>
+    <input id="bf-u" class="in" placeholder="หรือวางลิงก์รูปภาพ https://..." style="margin-top:8px"></div>
+   <div><label>หัวข้อบนภาพ</label><input id="bf-t" class="in" maxlength="80"></div><div><label>ข้อความรอง</label><input id="bf-s" class="in" maxlength="120"></div></div>
+   <p><button class="btn g" data-a="bsave">💾 บันทึกภาพ</button> <button class="btn s" data-a="bclose">ยกเลิก</button></p></div>
+  <div id="blist"></div>
+ </div>
+ </div></section>
+</main><div id="toasts" aria-live="polite"></div>
+<script src="config.js"></script>
+<script>
+const $=i=>document.getElementById(i),S={files:[],pin:'',code:'',dash:null,wtab:'a',sel:null,apin:'',adm:null,af:'all'},A={};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const APPCFG=window.APP_CONFIG||{},API_URL=String(APPCFG.API_URL||'').trim(),GAS=!!(window.google&&google.script&&google.script.run),DEMO=!API_URL&&!GAS;
+
+/* ================= โหมดตัวอย่าง (ใช้เมื่อเปิดไฟล์นอก Apps Script) ================= */
+const DEF='123456';
+const svgImg=(a,b,c)=>'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="1600" height="500" fill="url(#g)"/><circle cx="1300" cy="110" r="260" fill="${c}" opacity=".2"/><circle cx="980" cy="470" r="200" fill="#fff" opacity=".08"/><path d="M0 410Q400 300 800 385T1600 345V500H0Z" fill="#fff" opacity=".1"/></svg>`);
+const DB={adminPin:DEF,settings:{title:'ระบบเก็บคะแนนและส่งงานออนไลน์',tagline:'เรียนรู้ ส่งงาน ติดตามผล ได้ทุกที่ทุกเวลา',school:'วิทยาลัยตัวอย่าง',semester:'1/2569',logo:''},
+ banners:[{id:'b1',url:svgImg('#1e3a8a','#4338ca','#fbbf24'),title:'ยินดีต้อนรับสู่ระบบเก็บคะแนนและส่งงาน',subtitle:'ตรวจสอบคะแนน ส่งงาน ติดตามผลการเรียนได้ทุกที่'},{id:'b2',url:svgImg('#0f766e','#1d4ed8','#fde68a'),title:'ส่งงานตรงเวลา สะสมคะแนนเก็บ',subtitle:'ดูงานค้างและกำหนดส่งได้ที่เมนู "ส่งงาน"'}],
+ teachers:[{id:'T001',prefix:'นาง',name:'สมศรี',surname:'รักเรียน',pin:DEF},{id:'T002',prefix:'นาย',name:'ประสิทธิ์',surname:'วิชาดี',pin:DEF}],
+ students:[{id:'02900',prefix:'นาย',name:'สมชาย',surname:'ใจดี',classRoom:'ปวช.2/1',number:'5'},{id:'02901',prefix:'นางสาว',name:'สมหญิง',surname:'รักเรียน',classRoom:'ปวช.2/1',number:'6'},{id:'02902',prefix:'นาย',name:'สมชาย',surname:'มั่นคง',classRoom:'ปวช.2/1',number:'7'}],
+ subjects:[{code:'20204-2001',name:'การเขียนโปรแกรมเว็บ',gradeLevel:'ปวช.2',semester:'1/2569',teacherId:'T001'},{code:'20204-2002',name:'ฐานข้อมูลเบื้องต้น',gradeLevel:'ปวช.2',semester:'1/2569',teacherId:'T001'},{code:'20000-1101',name:'ภาษาอังกฤษพื้นฐาน',gradeLevel:'ปวช.2',semester:'1/2569',teacherId:'T002'}],
+ asg:[{id:'WEB-HW01',subjectCode:'20204-2001',title:'ใบงานที่ 1 หน้าเว็บแนะนำตนเอง',category:'work',maxScore:10,deadline:'2026-10-20T23:59',status:'Active',description:'สร้างหน้าเว็บ HTML แนะนำตนเอง อย่างน้อย 3 หัวข้อ พร้อมรูปภาพ'},
+  {id:'WEB-HW02',subjectCode:'20204-2001',title:'ใบงานที่ 2 จัดหน้าด้วย CSS',category:'work',maxScore:10,deadline:'2026-10-30T23:59',status:'Active',description:'ตกแต่งหน้าเว็บจากใบงานที่ 1 ด้วย CSS ให้มี Header, เมนู และ Footer'},
+  {id:'WEB-HW03',subjectCode:'20204-2001',title:'โครงงานย่อย JavaScript',category:'work',maxScore:20,deadline:'2026-12-20T23:59',status:'Active',description:'สร้างเว็บเครื่องคิดเลขหรือแบบฟอร์มที่ตรวจสอบข้อมูลด้วย JavaScript ส่งเป็นไฟล์ .zip'},
+  {id:'DB-HW01',subjectCode:'20204-2002',title:'ใบงานที่ 1 ออกแบบ ER-Diagram',category:'work',maxScore:10,deadline:'2026-11-10T23:59',status:'Active',description:'ออกแบบ ER-Diagram ระบบยืม-คืนหนังสือ ส่งเป็นไฟล์ภาพหรือ PDF'},
+  {id:'WEB-T01',subjectCode:'20204-2001',title:'ทดสอบย่อยครั้งที่ 1',category:'test',maxScore:10,deadline:'2026-10-15T23:59',status:'Active',description:''},
+  {id:'WEB-C01',subjectCode:'20204-2001',title:'คะแนนเก็บ: การเข้าร่วมกิจกรรมในชั้นเรียน',category:'collect',maxScore:10,deadline:'',status:'Active',description:'ครูลงคะแนนตามการเข้าร่วมกิจกรรม'},
+  {id:'WEB-C02',subjectCode:'20204-2001',title:'คะแนนเก็บ: สมุดบันทึกการเรียน',category:'collect',maxScore:10,deadline:'',status:'Active',description:''}],
+ subs:[{sid:'02900',aid:'WEB-HW01',score:8,fb:'ทำได้ดี แต่ควรเพิ่มรูปภาพ',at:'2026-10-19 20:10',status:'ตรงเวลา'},{sid:'02900',aid:'WEB-T01',score:7},{sid:'02900',aid:'WEB-C01',score:9},
+  {sid:'02901',aid:'WEB-HW01',score:10},{sid:'02901',aid:'WEB-HW02',score:9},{sid:'02901',aid:'WEB-C01',score:8},{sid:'02901',aid:'WEB-C02',score:10}],extra:{}};
+const full=u=>(u.prefix||'')+u.name+' '+(u.surname||'');
+const GEN={success:false,message:'โหมดตัวอย่าง: ฟังก์ชันนี้ใช้ได้เมื่อติดตั้งบน Apps Script'};
+function mock(fn,a){const D=DB;
+ const T=c=>{const[i,...r]=String(c||'').split(':'),p=r.join(':');return D.teachers.find(t=>t.id===i&&t.pin===p);};
+ const AD=p=>String(p)===D.adminPin,noT={success:false,message:'รหัสครูหรือ PIN ไม่ถูกต้อง'},noA={success:false,message:'PIN แอดมินไม่ถูกต้อง'},noOwn={success:false,message:'ไม่ใช่รายวิชาของคุณ'};
+ const own=(t,code)=>{const s=D.subjects.find(x=>x.code===code);return !!s&&s.teacherId===t.id;};
+ const sub=(sid,aid)=>D.subs.find(y=>y.sid===sid&&y.aid===aid);
+ const sum=(sid,code,cat)=>D.asg.filter(x=>x.subjectCode===code&&x.category===cat).reduce((n,x)=>{const s=sub(sid,x.id);return n+(s&&s.score!=null?+s.score:0);},0);
+ const gradeOf=t=>t>=80?'4':t>=75?'3.5':t>=70?'3':t>=65?'2.5':t>=60?'2':t>=55?'1.5':t>=50?'1':'0';
+ const ex=(sid,code)=>D.extra[sid+'|'+code]||{};
+ const tot=(sid,code)=>{const e=ex(sid,code),w=sum(sid,code,'work'),c=sum(sid,code,'collect'),t=sum(sid,code,'test'),af=+e.midterm||0,fe=+e.finalExam||0,total=w+c+t+af+fe;return{work:w,collect:c,test:t,midterm:af,finalExam:fe,total,special:e.special||'',grade:e.special||gradeOf(total)};};
+ const pend=sid=>D.asg.filter(x=>x.category==='work'&&x.status==='Active'&&!sub(sid,x.id));
+ const pendOut=sid=>pend(sid).map(x=>({id:x.id,title:x.title,subjectCode:x.subjectCode,subjectName:D.subjects.find(s=>s.code===x.subjectCode).name,maxScore:x.maxScore,deadline:x.deadline,description:x.description}));
+ const adm=()=>({success:true,users:{teachers:D.teachers.map(({pin,...r})=>r),students:D.students},settings:D.settings,banners:D.banners,counts:{subjects:D.subjects.length,submissions:D.subs.length}});
+ switch(fn){
+ case 'getPublicConfig':return {success:true,...D.settings,banners:D.banners};
+ case 'getStudentScorecard':{const st=D.students.find(s=>s.id===a[0]);if(!st)return {success:false,message:'ไม่พบรหัสนักเรียนนี้ (ลองกรอก 02900)'};
+  const code=a[1]||D.subjects[0].code,items=D.asg.filter(x=>x.subjectCode===code).map(x=>{const s=sub(st.id,x.id),has=s&&s.score!=null;return{title:x.title,max:x.maxScore,score:has?s.score:null,state:x.category==='collect'?(has?'graded':'unrec'):s?(has?'graded':'pending'):'none',late:s&&s.status==='ส่งช้า'?'ส่งช้า':'',files:[],feedback:s&&s.fb||''};});
+  return {success:true,student:{...st,name:full(st)},subjects:D.subjects.map(s=>({code:s.code,name:s.name})),current:code,card:{...tot(st.id,code),items}};}
+ case 'findPendingWork':{const q=String(a[0]).trim();const m=/^\d{5}$/.test(q)?D.students.filter(s=>s.id===q):D.students.filter(s=>full(s).includes(q));
+  if(!m.length)return {success:false,message:'ไม่พบนักเรียน (ลองกรอก 02900 หรือ สมชาย)'};
+  return {success:true,matches:m.map(s=>({id:s.id,name:full(s),classRoom:s.classRoom,number:s.number})),pending:m.length===1?pendOut(m[0].id):null};}
+ case 'submitAssignment':{const p=a[0],x=D.asg.find(y=>y.id===p.assignmentId),late=new Date(x.deadline)<new Date(),id='SUB-'+Date.now().toString().slice(-6);
+  D.subs.push({sid:p.studentId,aid:x.id,score:null,at:new Date().toLocaleString('th-TH'),status:late?'ส่งช้า':'ตรงเวลา'});
+  return {success:true,message:'ส่งงานสำเร็จ (ตัวอย่าง)',submissionId:id,subjectCode:x.subjectCode,timestamp:new Date().toLocaleString('th-TH'),status:late?'ส่งช้า':'ตรงเวลา',files:p.files.map(f=>({name:f.fileName,url:'#'}))};}
+ /* ----- ครู (ส่งค่า รหัสครู:PIN) ----- */
+ case 'teacherDashboard':{const t=T(a[0]);if(!t)return noT;const sj=D.subjects.filter(s=>s.teacherId===t.id),codes=sj.map(s=>s.code),as=D.asg.filter(x=>codes.includes(x.subjectCode));
+  return {success:true,teacher:{id:t.id,name:full(t)},sheetUrl:'#',folderUrl:'#',counts:{subjects:sj.length,students:D.students.length,assignments:as.length,submissions:D.subs.filter(s=>as.some(x=>x.id===s.aid)).length},settings:D.settings,
+   subjects:sj.map(s=>({...s,studentCount:D.students.length})),assignments:as.map(x=>({...x,submittedCount:D.subs.filter(s=>s.aid===x.id).length,totalEnrolled:D.students.length}))};}
+ case 'teacherChangePin':{const t=T(a[0]);if(!t)return noT;if(!/^\d{6}$/.test(a[1]))return {success:false,message:'PIN ต้องเป็นตัวเลข 6 หลัก'};t.pin=a[1];return {success:true,message:'เปลี่ยน PIN เรียบร้อยแล้ว'};}
+ case 'saveSubject':{const t=T(a[0]);if(!t)return noT;const s=a[1];if(!s.code||!s.name)return {success:false,message:'กรอกรหัสวิชาและชื่อวิชา'};const o=D.subjects.find(x=>x.code===s.code);
+  if(o){if(o.teacherId!==t.id)return noOwn;Object.assign(o,{name:s.name,gradeLevel:s.gradeLevel,semester:s.semester});}else D.subjects.push({code:s.code,name:s.name,gradeLevel:s.gradeLevel,semester:s.semester,teacherId:t.id});
+  return {success:true,message:'บันทึกรายวิชาแล้ว'};}
+ case 'deleteSubject':{const t=T(a[0]);if(!t)return noT;if(!own(t,a[1]))return noOwn;D.subjects=D.subjects.filter(x=>x.code!==a[1]);D.asg=D.asg.filter(x=>x.subjectCode!==a[1]);return {success:true,message:'ลบรายวิชาแล้ว'};}
+ case 'saveAssignment':{const t=T(a[0]);if(!t)return noT;const x=a[1];if(!own(t,x.subjectCode))return noOwn;const o={id:x.id,subjectCode:x.subjectCode,title:x.title,category:x.category,maxScore:Number(x.maxScore),deadline:x.deadline||'',status:x.status,description:x.description||''},i=D.asg.findIndex(y=>y.id===x.id);
+  if(i>=0){if(!own(t,D.asg[i].subjectCode))return noOwn;D.asg[i]=o;}else D.asg.push(o);return {success:true,message:'บันทึกชิ้นงานแล้ว'};}
+ case 'deleteAssignment':{const t=T(a[0]);if(!t)return noT;const x=D.asg.find(y=>y.id===a[1]);if(!x||!own(t,x.subjectCode))return noOwn;D.asg=D.asg.filter(y=>y.id!==a[1]);D.subs=D.subs.filter(s=>s.aid!==a[1]);return {success:true,message:'ลบชิ้นงานแล้ว'};}
+ case 'getAssignmentSubmissions':{const t=T(a[0]);if(!t)return noT;const x=D.asg.find(y=>y.id===a[1]);if(!x||!own(t,x.subjectCode))return noOwn;
+  return {success:true,assignment:{...x},students:D.students.map(st=>{const s=sub(st.id,x.id);return{id:st.id,name:full(st),submitted:!!s,score:s&&s.score!=null?s.score:'',feedback:s&&s.fb||'',at:s&&s.at||'',status:s&&s.status||'',files:[]};})};}
+ case 'saveAssignmentGrades':{const t=T(a[0]);if(!t)return noT;const x=D.asg.find(y=>y.id===a[1]);if(!x||!own(t,x.subjectCode))return noOwn;
+  for(const g of a[2]){const v=Number(g.score);if(isNaN(v)||v<0||v>x.maxScore)return {success:false,message:'คะแนนของรหัส '+g.studentId+' ต้องอยู่ระหว่าง 0 ถึง '+x.maxScore};}
+  a[2].forEach(g=>{let s=sub(g.studentId,x.id);if(!s){if(x.category!=='collect')return;s={sid:g.studentId,aid:x.id};D.subs.push(s);}s.score=Number(g.score);s.fb=g.feedback||'';});return {success:true,message:'บันทึกคะแนนแล้ว'};}
+ case 'getGradebook':{const t=T(a[0]);if(!t)return noT;if(!own(t,a[1]))return noOwn;return {success:true,rows:D.students.map(s=>({...s,name:full(s),missing:pend(s.id).filter(x=>x.subjectCode===a[1]).map(x=>x.id),...tot(s.id,a[1])}))};}
+ case 'saveScoresBatch':{const t=T(a[0]);if(!t)return noT;a[1].forEach(r=>{D.extra[r.studentId+'|'+r.subjectCode]={midterm:r.midterm,finalExam:r.finalExam,special:r.special};});return {success:true,message:'บันทึกสมุดคะแนนแล้ว'};}
+ case 'importStudentsFromCSV':{const t=T(a[0]);if(!t)return noT;let n=0;String(a[1]).split(/\r?\n/).forEach(l=>{const c=l.split(',').map(x=>x.trim());if(/^\d{5}$/.test(c[0])&&!D.students.find(s=>s.id===c[0])){D.students.push({id:c[0],prefix:c[1],name:c[2],surname:c[3],classRoom:c[4],number:c[5]});n++;}});return {success:true,message:'นำเข้า '+n+' รายการ'};}
+ case 'enrollStudents':return T(a[0])?{success:true,message:'เพิ่มเข้าวิชาแล้ว (ตัวอย่าง)'}:noT;
+ case 'deleteStudent':return T(a[0])?{success:true,message:'ลบแล้ว (ตัวอย่าง)'}:noT;
+ /* ----- แอดมิน ----- */
+ case 'adminLogin':return AD(a[0])?adm():noA;
+ case 'adminSaveUser':{if(!AD(a[0]))return noA;const u=a[1],L=u.role==='teacher'?D.teachers:D.students,i=L.findIndex(x=>x.id===u.id),old=i>=0?L[i]:null;
+  const o=u.role==='teacher'?{id:u.id,prefix:u.prefix,name:u.name,surname:u.surname,pin:u.pin||(old&&old.pin)||DEF}:{id:u.id,prefix:u.prefix,name:u.name,surname:u.surname,classRoom:u.classRoom,number:u.number};
+  if(i<0)L.push(o);else L[i]=o;return {success:true,message:u.pin&&old?'บันทึกแล้ว (ตั้ง PIN ใหม่)':'บันทึกสมาชิกแล้ว'};}
+ case 'adminDeleteUser':{if(!AD(a[0]))return noA;const L=a[1]==='teacher'?D.teachers:D.students,i=L.findIndex(x=>x.id===a[2]);if(i>=0)L.splice(i,1);return {success:true,message:'ลบแล้ว'};}
+ case 'adminSaveSettings':if(!AD(a[0]))return noA;if(a[1].clearLogo)D.settings.logo='';else{Object.assign(D.settings,{title:a[1].title,tagline:a[1].tagline,school:a[1].school,semester:a[1].semester});if(a[1].newPin)D.adminPin=a[1].newPin;}return {success:true,message:'บันทึกการตั้งค่าแล้ว'};
+ case 'adminUploadLogo':if(!AD(a[0]))return noA;D.settings.logo='data:'+a[1].mimeType+';base64,'+a[1].fileData;return {success:true};
+ case 'adminUploadBanner':if(!AD(a[0]))return noA;return {success:true,url:'data:'+a[1].mimeType+';base64,'+a[1].fileData};
+ case 'adminSaveBanners':if(!AD(a[0]))return noA;D.banners=a[1].map(b=>({id:b.id,url:b.url,title:b.title,subtitle:b.subtitle}));return {success:true,message:'บันทึกภาพหน้าปกแล้ว'};
+ default:return GEN;}}
+const callApi=(fn,a)=>fetch(API_URL,{method:'POST',body:JSON.stringify({fn,args:a})}).then(r=>{if(!r.ok)throw new Error('เซิร์ฟเวอร์ตอบกลับผิดพลาด ('+r.status+')');return r.json();}).catch(e=>{throw e instanceof TypeError?new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตหรือค่า API_URL ใน config.js'):e;});
+const run=(fn,...a)=>API_URL?callApi(fn,a):DEMO?new Promise(ok=>setTimeout(()=>ok(JSON.parse(JSON.stringify(mock(fn,a)))),150)):new Promise((ok,no)=>google.script.run.withSuccessHandler(ok).withFailureHandler(no).apiCall(fn,a));
+
+const ic=(e,c)=>`<span class="i3d ${c||''}"><span class="g">${e}</span></span>`;
+const link=f=>/^https:\/\/(drive|docs)\.google\.com\//.test(f.url)?`<a href="${esc(f.url)}" target="_blank" rel="noopener">📄 ${esc(f.name)}</a>`:esc(f.name);
+function toast(m,bad){const t=document.createElement('div');t.className='toast';t.innerHTML=ic(bad?'❌':'✅',bad?'c-rose':'c-green')+'<span>'+esc(m)+'</span>';$('toasts').appendChild(t);setTimeout(()=>t.remove(),Math.min(8000,3000+m.length*40));}
+const fail=e=>toast(e&&e.message||String(e),1);
+const ok=r=>{if(!r||!r.success){toast(r?r.message:'เกิดข้อผิดพลาด',1);return false;}if(r.message)toast(r.message);return true;};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset.v,b);});
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter')A.search();});
+$('s-q').addEventListener('keydown',e=>{if(e.key==='Enter')A.findp();});
+$('as-q').addEventListener('input',()=>admRender());
+$('demo').hidden=!DEMO;
+
+/* ---------- โครงหน้า ---------- */
+A.tab=t=>{['score','submit','teacher','admin'].forEach(k=>$('v-'+k).hidden=k!==t);$('hero').hidden=!(t==='score'||t==='submit');document.querySelectorAll('nav [data-a=tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.v===t));};
+const okUrl=u=>/^(https:\/\/|data:image\/)/.test(u||'');
+function load(){run('getPublicConfig').then(c=>{if(!ok(c))return;S.cfg=c;$('ttl').textContent=c.title;setLogo(c.logo);$('sch').textContent=c.school+' • '+c.semester;$('tag').textContent=c.tagline||'';$('tag').hidden=!c.tagline;document.title=c.title;drawHero();}).catch(fail);}
+/* ---------- ภาพหน้าปก (สไลด์) ---------- */
+let hi=0,ht;
+function drawHero(){const c=S.cfg,l=(c.banners||[]).filter(b=>okUrl(b.url)),list=l.length?l:[{url:'',title:c.title,subtitle:c.tagline||c.school}],h=$('hero-in');
+ h.innerHTML=list.map((b,i)=>`<div class="sl${i?'':' on'}"><div class="cap">${b.title?`<h2>${esc(b.title)}</h2>`:''}${b.subtitle?`<p>${esc(b.subtitle)}</p>`:''}</div></div>`).join('')+(list.length>1?`<button class="ar l" data-a="hgo" data-v="-1" aria-label="ภาพก่อนหน้า">‹</button><button class="ar r" data-a="hgo" data-v="1" aria-label="ภาพถัดไป">›</button><div class="dots">${list.map((_,i)=>`<button data-a="hset" data-v="${i}" aria-label="ภาพที่ ${i+1}"${i?'':' class="on"'}></button>`).join('')}</div>`:'');
+ h.querySelectorAll('.sl').forEach((e,i)=>{if(list[i].url)e.style.backgroundImage='url('+JSON.stringify(list[i].url)+')';});
+ hi=0;clearInterval(ht);if(list.length>1&&!matchMedia('(prefers-reduced-motion:reduce)').matches)ht=setInterval(()=>hshow(hi+1),5500);}
+function hshow(n){const s=document.querySelectorAll('#hero-in .sl'),d=document.querySelectorAll('#hero-in .dots button');if(!s.length)return;hi=(n+s.length)%s.length;s.forEach((e,i)=>e.classList.toggle('on',i===hi));d.forEach((e,i)=>e.classList.toggle('on',i===hi));}
+A.hgo=v=>hshow(hi+(+v));A.hset=v=>hshow(+v);
+
+/* ---------- นักเรียน: ดูคะแนน ---------- */
+const SL={graded:'ตรวจแล้ว',pending:'รอตรวจ',none:'ยังไม่ส่ง',unrec:'ยังไม่ลงคะแนน'};
+A.search=(code)=>{const q=$('q').value.trim();if(!/^\d{5}$/.test(q))return toast('กรอกรหัสนักเรียน 5 หลัก เช่น 02900',1);
+ run('getStudentScorecard',q,code||'').then(r=>{if(!r.success)return toast(r.message,1);const c=r.card,bad=['0','ขร.','สม.','มผ.'].includes(c.grade);
+ $('res').hidden=false;$('res').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><div class="row">${ic('👨‍🎓')}<div><b style="font-size:1.2rem">${esc(r.student.name)}</b><div class="mut">รหัส ${esc(r.student.id)} • ${esc(r.student.classRoom)} เลขที่ ${esc(r.student.number)}</div></div></div>
+ <div class="row"><div><div class="mut">คะแนนรวม</div><b style="font-size:2.1rem">${c.total}</b> / 100</div><div class="grade${bad?' bad':''}"><small>เกรด</small>${esc(c.grade)}</div></div></div>
+ <p class="row">${r.subjects.map(s=>`<button class="pill${s.code===r.current?' on':''}" data-a="search" data-v="${esc(s.code)}">${esc(s.code)} ${esc(s.name||'')}</button>`).join('')}</p>
+ <div class="bar2"><i style="width:${Math.min(100,c.total)}%"></i></div>
+ <div class="g2" style="margin-top:14px"><div class="stat">ใบงาน<b>${c.work}</b></div><div class="stat">คะแนนเก็บ<b>${c.collect||0}</b></div><div class="stat">ทดสอบ<b>${c.test}</b></div><div class="stat">กลางภาค<b>${c.midterm}</b></div><div class="stat">ปลายภาค<b>${c.finalExam}</b></div></div></div>
+ <div class="card"><h3>${ic('📋')} รายละเอียดแต่ละชิ้นงาน</h3><div class="tw"><table><tr><th>ชิ้นงาน</th><th>เต็ม</th><th>ได้</th><th>สถานะ</th></tr>${c.items.map(i=>`<tr><td>${esc(i.title)}${i.files.length?'<br>'+i.files.map(link).join('<br>'):''}${i.feedback?'<br><small>ครู: '+esc(i.feedback)+'</small>':''}</td><td>${i.max}</td><td><b>${i.score==null?'—':i.score}</b></td><td><span class="b ${i.state}">${SL[i.state]}</span> ${i.late==='ส่งช้า'?'<span class="b late">ส่งช้า</span>':''}</td></tr>`).join('')||'<tr><td colspan=4>ยังไม่มีชิ้นงาน</td></tr>'}</table></div></div>`;}).catch(fail);};
+
+/* ---------- นักเรียน: ค้นหางานค้าง + ส่งงาน ---------- */
+function dueInfo(d){const df=Math.ceil((new Date(d)-Date.now())/864e5);return df<0?{late:true,t:'เลยกำหนด '+(-df)+' วัน'}:{late:false,t:df===0?'ส่งภายในวันนี้':'เหลือ '+df+' วัน'};}
+function drawPending(stu,list){S.stu=stu;S.sel=null;$('s-form').hidden=true;
+ $('s-match').innerHTML=`<div class="pick row">${ic('👨‍🎓')}<div><b>${esc(stu.name)}</b><div class="mut">รหัส ${esc(stu.id)} • ${esc(stu.classRoom)} เลขที่ ${esc(stu.number)}</div></div></div>`;
+ $('s-list').innerHTML=`<div class="card c" style="max-width:700px"><h3>${ic('📋','c-amber')} งานค้างส่ง ${list.length} ชิ้น</h3>`+(list.length?'':'<p class="mut">🎉 ไม่มีงานค้างส่ง</p>')+list.map(p=>{const d=dueInfo(p.deadline);
+  return `<div class="card pend${d.late?' late':''}" id="p-${esc(p.id)}" style="margin-bottom:12px"><div class="row" style="justify-content:space-between"><div><span class="b">${esc(p.subjectCode)}</span> <b>${esc(p.title)}</b><div class="mut">วิชา ${esc(p.subjectName)}</div></div><span class="b ${d.late?'late':'ok'}">${d.t}</span></div>
+  <p>${esc(p.description||'ไม่มีรายละเอียดเพิ่มเติม')}</p><div class="row mut"><span>⏰ กำหนดส่ง ${esc(p.deadline.replace('T',' '))} น.</span><span>• คะแนนเต็ม ${esc(p.maxScore)}</span></div>
+  ${d.late?'<div class="mut" style="color:#9a3412">ส่งได้ แต่จะถูกบันทึกว่า "ส่งช้า"</div>':''}
+  <p style="margin:10px 0 0"><button class="btn g" data-a="pick" data-v="${esc(p.id)}"><span class="i3d c-green"><span class="g">📤</span></span>ส่งงานชิ้นนี้</button></p></div>`}).join('')+'</div>';
+ S.pend=list;}
+A.findp=(id)=>{const q=(typeof id==='string'&&id?id:$('s-q').value).trim();if(!q)return toast('กรอกรหัสนักเรียน 5 หลัก หรือชื่อ',1);
+ $('s-rcpt').hidden=true;
+ run('findPendingWork',q).then(r=>{if(!r.success){$('s-list').innerHTML='';$('s-match').innerHTML='';$('s-form').hidden=true;return toast(r.message,1);}
+  if(r.matches.length>1){$('s-list').innerHTML='';$('s-form').hidden=true;$('s-match').innerHTML='<p class="mut">พบ '+r.matches.length+' รายชื่อ เลือกนักเรียนของคุณ:</p>'+r.matches.map(m=>`<button class="pill" style="margin:4px" data-a="findp" data-v="${esc(m.id)}">${esc(m.id)} • ${esc(m.name)} (${esc(m.classRoom)})</button>`).join('');return;}
+  drawPending(r.matches[0],r.pending||[]);}).catch(fail);};
+A.pick=id=>{const p=S.pend.find(x=>x.id===id);S.sel=p;document.querySelectorAll('.pend').forEach(e=>e.classList.toggle('sel',e.id==='p-'+id));
+ $('s-pick').innerHTML=`<b>${esc(p.title)}</b><div class="mut">${esc(p.subjectCode)} ${esc(p.subjectName)} • ผู้ส่ง: ${esc(S.stu.name)} (${esc(S.stu.id)}) • เต็ม ${esc(p.maxScore)}</div>`;
+ $('s-form').hidden=false;$('s-form').scrollIntoView({behavior:'smooth',block:'center'});};
+$('s-file').onchange=e=>{const n=S.files.concat([...e.target.files]);e.target.value='';
+ if(n.length>5||n.reduce((s,f)=>s+f.size,0)>25*1048576)return toast('แนบได้สูงสุด 5 ไฟล์ รวมไม่เกิน 25 MB',1);S.files=n;listFiles();};
+function listFiles(){$('s-files').innerHTML=S.files.map((f,i)=>`<div class="row" style="justify-content:space-between;margin:6px 0"><span>${esc(f.name)} • ${(f.size/1048576).toFixed(2)} MB</span><button class="pill" data-a="rmf" data-v="${i}">เอาออก</button></div>`).join('');}
+A.rmf=i=>{S.files.splice(+i,1);listFiles();};
+const b64=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>no(new Error('อ่านไฟล์ '+f.name+' ไม่ได้'));r.readAsDataURL(f);});
+A.submit=async()=>{if(!S.sel)return toast('เลือกงานที่ต้องการส่งก่อน',1);if(!S.files.length)return toast('แนบไฟล์อย่างน้อย 1 ไฟล์',1);
+ const btn=$('s-go');btn.disabled=true;toast('กำลังอัปโหลด... กรุณาอย่าปิดหน้านี้');
+ try{const files=[];for(const f of S.files)files.push({fileName:f.name,mimeType:f.type,fileData:await b64(f)});
+  const r=await run('submitAssignment',{studentId:S.stu.id,assignmentId:S.sel.id,files});if(!ok(r))return;
+  S.files=[];listFiles();$('s-rcpt').hidden=false;$('s-rcpt').innerHTML=`<h3>${ic('🎉','c-amber')} บันทึกการส่งงานแล้ว</h3><p>รหัสยืนยัน <b>${esc(r.submissionId)}</b><br>วิชา ${esc(r.subjectCode)} • ${esc(r.timestamp)} • <span class="b ${r.status==='ส่งช้า'?'late':'graded'}">${esc(r.status)}</span></p><p>${r.files.map(link).join('<br>')}</p>`;
+  A.findp(S.stu.id);
+ }catch(e){fail(e);}finally{btn.disabled=false;}};
+
+/* ---------- PIN 6 หลัก (ใช้ร่วมกันครู/แอดมิน) ---------- */
+const PL=6;
+function mkPin(box,pad,k){let v='',sh=false;const bx=$(box);bx.innerHTML='<i></i>'.repeat(PL);
+ const draw=()=>[...bx.children].forEach((b,i)=>{b.textContent=v[i]?(sh?v[i]:'●'):'';b.classList.toggle('on',i===v.length);b.classList.toggle('f',!!v[i]);});
+ $(pad).innerHTML=[1,2,3,4,5,6,7,8,9,'C',0,'D'].map(x=>`<button type="button" data-a="pk" data-v="${k}:${x}"${isNaN(x)?' class="k2"':''}>${x==='C'?'ล้าง':x==='D'?'ลบ':x}</button>`).join('');draw();
+ return{get v(){return v},key(x){if(x==='C')v='';else if(x==='D')v=v.slice(0,-1);else if(v.length<PL)v+=x;draw();},toggle(){sh=!sh;draw();},clear(){v='';draw();},shake(){bx.classList.remove('shake');void bx.offsetWidth;bx.classList.add('shake');}};}
+const P={t:mkPin('pinbox','pad','t'),a:mkPin('a-pinbox','a-pad','a')};
+A.pk=v=>{const[w,k]=v.split(':');P[w].key(k);};
+A.pshow=w=>P[w].toggle();
+document.addEventListener('keydown',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.nodeName))return;
+ const w=$('t-gate').offsetParent!==null?'t':$('a-gate').offsetParent!==null?'a':null;if(!w)return;
+ if(/^\d$/.test(e.key))P[w].key(e.key);else if(e.key==='Backspace')P[w].key('D');else if(e.key==='Enter')(w==='t'?A.login:A.alogin)();});
+$('t-id').addEventListener('keydown',e=>{if(e.key==='Enter')A.login();});
+
+/* ---------- ครู ---------- */
+A.login=()=>{const p=P.t,id=$('t-id').value.trim();if(!id)return toast('กรอกรหัสครู',1);if(p.v.length<PL){p.shake();return toast('กรอก PIN ให้ครบ '+PL+' หลัก',1);}const cred=id+':'+p.v;run('teacherDashboard',cred).then(d=>{if(!d.success){p.clear();p.shake();return toast(d.message,1);}S.pin=cred;p.clear();$('t-gate').hidden=true;$('t-app').hidden=false;dash(d);}).catch(fail);};
+A.logout=()=>{S.pin='';S.code='';$('t-app').hidden=true;$('t-gate').hidden=false;};
+const reload=()=>run('teacherDashboard',S.pin).then(d=>{if(ok(d))dash(d);}).catch(fail);
+function dash(d){S.dash=d;$('l-sh').href=d.sheetUrl;$('l-dr').href=d.folderUrl;const c=d.counts;
+ $('stats').innerHTML=[['📚','violet','รายวิชา',c.subjects],['👥','teal','นักศึกษา',c.students],['📋','blue','ชิ้นงาน',c.assignments],['📁','amber','ไฟล์ที่ส่ง',c.submissions]].map(x=>`<div class="stat">${ic(x[0],'c-'+x[1])}<b>${x[3]}</b>${x[2]}</div>`).join('');
+ $('t-who').textContent=d.teacher.name+' ('+d.teacher.id+')';$('l-dr').hidden=!d.folderUrl;
+ $('clist').innerHTML=d.subjects.map(s=>`<div class="card"><span class="b">${esc(s.code)}</span> <span class="mut">${esc(s.semester)}</span><h3>${esc(s.name)}</h3><div class="mut">${esc(s.gradeLevel)} • ${s.studentCount} คน</div><p class="row"><button class="btn" data-a="open" data-v="${esc(s.code)}">เข้าจัดการ</button><button class="btn s" data-a="editsubj" data-v="${esc(s.code)}">✏️</button><button class="btn r" data-a="delsubj" data-v="${esc(s.code)}">🗑️</button></p></div>`).join('')||'<p class="mut">ยังไม่มีรายวิชา กด "เพิ่มรายวิชา"</p>';
+ if(S.code)ws();}
+A.ttab=t=>{$('t-c').hidden=t!=='c';$('t-s').hidden=t!=='s';document.querySelectorAll('#t-tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===t));};
+A.newsubj=()=>{['code','name','lv'].forEach(k=>$('f-'+k).value='');$('f-code').readOnly=false;$('f-sem').value=S.dash.settings.semester;$('sf').hidden=false;};
+A.editsubj=c=>{const s=S.dash.subjects.find(x=>x.code===c);$('f-code').value=s.code;$('f-code').readOnly=true;$('f-name').value=s.name;$('f-lv').value=s.gradeLevel;$('f-sem').value=s.semester;$('sf').hidden=false;};
+A.closesf=()=>$('sf').hidden=true;
+A.savesubj=()=>run('saveSubject',S.pin,{code:$('f-code').value,name:$('f-name').value,gradeLevel:$('f-lv').value,semester:$('f-sem').value}).then(r=>{if(ok(r)){A.closesf();reload();load();}}).catch(fail);
+A.delsubj=c=>confirm('ลบรายวิชา '+c+' ?')&&run('deleteSubject',S.pin,c).then(r=>{if(ok(r)){reload();load();}}).catch(fail);
+A.changepin=()=>{const a=$('cp-1').value,b=$('cp-2').value;if(!/^\d{6}$/.test(a))return toast('PIN ใหม่ต้องเป็นตัวเลข 6 หลัก',1);if(a!==b)return toast('PIN ทั้งสองช่องไม่ตรงกัน',1);
+ run('teacherChangePin',S.pin,a).then(r=>{if(ok(r)){S.pin=S.pin.split(':')[0]+':'+a;$('cp-1').value=$('cp-2').value='';}}).catch(fail);};
+function setLogo(u){const im=$('logo'),gi=$('glogo');
+ im.onerror=()=>{im.hidden=true;$('logoTile').hidden=false;gi.hidden=true;$('gtile').hidden=false;};
+ im.onload=()=>{im.hidden=false;$('logoTile').hidden=true;gi.src=im.src;gi.hidden=false;$('gtile').hidden=true;};
+ if(u)im.src=u;else{im.hidden=true;$('logoTile').hidden=false;gi.hidden=true;$('gtile').hidden=false;}}
+
+
+A.open=c=>{S.code=c;S.wtab='a';$('courses').hidden=true;$('ws').hidden=false;ws();};
+A.back=()=>{S.code='';$('ws').hidden=true;$('courses').hidden=false;reload();};
+A.wtab=t=>{S.wtab=t;['a','b','s'].forEach(k=>$('w-'+k).hidden=k!==t);document.querySelectorAll('#w-tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===t));};
+function nextId(){const u=S.dash.assignments.map(a=>a.id);let n=1;while(u.includes(S.code+'-HW'+String(n).padStart(2,'0')))n++;return S.code+'-HW'+String(n).padStart(2,'0');}
+function ws(){const s=S.dash.subjects.find(x=>x.code===S.code);if(!s)return A.back();
+ const as=S.dash.assignments.filter(a=>a.subjectCode===S.code);
+ $('ws').innerHTML=`<p><button class="btn s" data-a="back">⬅️ กลับหน้ารายวิชา</button></p><div class="card"><h2><span class="b">${esc(s.code)}</span> ${esc(s.name)}</h2><span class="mut">${esc(s.gradeLevel)} • ${esc(s.semester)}</span></div>
+ <div class="tabs" id="w-tabs"><button data-a="wtab" data-v="a">${ic('📋')} ชิ้นงาน & ตรวจงาน</button><button data-a="wtab" data-v="b">${ic('📝','c-violet')} สมุดคะแนน</button><button data-a="wtab" data-v="s">${ic('👥','c-teal')} รายชื่อ & นำเข้า CSV</button></div>
+ <div id="w-a"><div class="g2"><div class="card"><h3>มอบหมายงานใหม่</h3><label>รหัสชิ้นงาน</label><input id="a-id" class="in" value="${esc(nextId())}"><label>ชื่อชิ้นงาน</label><input id="a-t" class="in">
+  <label>หมวดคะแนน</label><select id="a-c" class="in"><option value="work">ใบงาน/งาน (นักเรียนส่งไฟล์)</option><option value="test">ทดสอบ</option><option value="collect">คะแนนเก็บ (ลงคะแนนได้เลย)</option></select><label>คะแนนเต็ม</label><input id="a-m" type="number" min="1" max="100" value="10" class="in">
+  <div id="a-hint" class="pick" hidden>คะแนนเก็บ: ไม่ต้องให้นักเรียนส่งไฟล์ กดปุ่ม "ลงคะแนน" ในรายการชิ้นงานเพื่อกรอกคะแนนได้ทันที</div><label>รายละเอียดงาน</label><textarea id="a-ds" class="in" rows="2" maxlength="300"></textarea><label>กำหนดส่ง (ไม่ต้องกรอกสำหรับคะแนนเก็บ)</label><input id="a-d" type="datetime-local" class="in"><label>สถานะ</label><select id="a-s" class="in"><option value="Active">เปิดรับ</option><option value="Closed">ปิดรับ</option></select><p><button class="btn g" data-a="saveasg">บันทึกชิ้นงาน</button></p></div>
+ <div class="card" style="grid-column:span 2"><h3>รายการชิ้นงาน</h3><div class="tw"><table><tr><th>รหัส</th><th>ชื่อ</th><th>เต็ม</th><th>ส่งแล้ว</th><th>สถานะ</th><th></th></tr>${as.map(a=>`<tr><td>${esc(a.id)}</td><td>${esc(a.title)}${a.category==='test'?' <span class="b">ทดสอบ</span>':a.category==='collect'?' <span class="b t">คะแนนเก็บ</span>':''}<br><small class="mut">${esc(a.deadline.replace('T',' '))}</small></td><td>${esc(a.maxScore)}</td><td>${a.submittedCount}/${a.totalEnrolled}</td><td>${a.status==='Active'?'เปิด':'ปิด'}</td><td class="row"><button class="btn" data-a="grade" data-v="${esc(a.id)}">${a.category==='collect'?'✏️ ลงคะแนน':'👁️ ตรวจ'}</button><button class="btn s" data-a="editasg" data-v="${esc(a.id)}">✏️</button><button class="btn r" data-a="delasg" data-v="${esc(a.id)}">🗑️</button></td></tr>`).join('')||'<tr><td colspan=6>ยังไม่มีชิ้นงาน</td></tr>'}</table></div></div></div><div id="gp" class="card" hidden></div></div>
+ <div id="w-b" hidden class="card"><h3>สมุดคะแนน (คะแนนใบงาน/ทดสอบรวมอัตโนมัติจากการตรวจ รวมทุกส่วนเต็ม 100)</h3><div id="gb" class="tw">กำลังโหลด...</div><p><button class="btn g" data-a="savebook">💾 บันทึกสมุดคะแนน</button></p><p class="mut">เกรด: ≥80=4, ≥75=3.5, ≥70=3, ≥65=2.5, ≥60=2, ≥55=1.5, ≥50=1, ต่ำกว่า=0 • เกรดพิเศษที่ครูเลือกจะแทนที่เกรดคำนวณ</p></div>
+ <div id="w-s" hidden class="card"><h3>เพิ่มนักเรียนเข้าวิชาด้วยรหัส</h3><div class="row"><input id="en-ids" class="in grow" placeholder="รหัสนักเรียน 5 หลัก คั่นด้วยเว้นวรรคหรือจุลภาค"><button class="btn g" data-a="enroll">➕ เพิ่มเข้าวิชา</button></div><hr style="border:0;border-top:2px solid var(--line);margin:18px 0"><h3>นำเข้ารายชื่อ (CSV: รหัส,คำนำหน้า,ชื่อ,นามสกุล,ระดับชั้น,เลขที่)</h3><input id="csvf" type="file" accept=".csv,text/csv" class="in"><textarea id="csvt" class="in" rows="4" placeholder="หรือวางข้อมูลที่นี่"></textarea><p><button class="btn" data-a="csv">🚀 นำเข้า</button></p><div id="ro" class="tw"></div></div>`;
+ $('csvf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('csvt').value=r.result;r.readAsText(f,'UTF-8');};
+ $('a-c').onchange=()=>{$('a-hint').hidden=$('a-c').value!=='collect';};
+ A.wtab(S.wtab);book();}
+function book(){run('getGradebook',S.pin,S.code).then(r=>{if(!r.success)return toast(r.message,1);S.rows=r.rows;
+ $('gb').innerHTML=`<table><tr><th>รหัส</th><th>ชื่อ</th><th>ค้างส่ง</th><th>ใบงาน</th><th>คะแนนเก็บ</th><th>ทดสอบ</th><th>กลางภาค</th><th>ปลายภาค</th><th>รวม</th><th>พิเศษ</th><th>เกรด</th></tr>${r.rows.map(x=>`<tr data-id="${esc(x.id)}"><td>${esc(x.id)}</td><td>${esc(x.name)}</td><td>${x.missing.length?'<span class="b late">'+x.missing.length+'</span>':'<span class="b graded">ครบ</span>'}</td><td>${x.work}</td><td>${x.collect||0}</td><td>${x.test}</td>
+ <td><input class="in sm" data-f="midterm" type="number" min="0" max="100" value="${x.midterm||''}"></td><td><input class="in sm" data-f="finalExam" type="number" min="0" max="100" value="${x.finalExam||''}"></td><td><b>${x.total}</b></td>
+ <td><select class="in sm" data-f="special">${['','ขร.','0','สม.','มผ.','ผ.'].map(v=>`<option${v===x.special?' selected':''} value="${v}">${v||'-'}</option>`).join('')}</select></td><td><b>${esc(x.grade)}</b></td></tr>`).join('')||'<tr><td colspan=11>ยังไม่มีนักศึกษา</td></tr>'}</table>`;
+ $('ro').innerHTML=`<table><tr><th>รหัส</th><th>ชื่อ</th><th>ชั้น</th><th>เลขที่</th><th></th></tr>${r.rows.map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.name)}</td><td>${esc(x.classRoom)}</td><td>${esc(x.number)}</td><td><button class="btn r" data-a="delstu" data-v="${esc(x.id)}">🗑️</button></td></tr>`).join('')}</table>`;}).catch(fail);}
+A.savebook=()=>{const list=[...document.querySelectorAll('#gb tr[data-id]')].map(tr=>{const g=f=>tr.querySelector('[data-f='+f+']').value;return{studentId:tr.dataset.id,subjectCode:S.code,finalExam:g('finalExam'),midterm:g('midterm'),special:g('special')};});
+ run('saveScoresBatch',S.pin,list).then(r=>{if(ok(r))book();}).catch(fail);};
+A.enroll=()=>run('enrollStudents',S.pin,S.code,$('en-ids').value).then(r=>{if(ok(r)){$('en-ids').value='';reload();}}).catch(fail);
+A.csv=()=>run('importStudentsFromCSV',S.pin,$('csvt').value,S.code).then(r=>{if(ok(r)){$('csvt').value='';reload();}}).catch(fail);
+A.delstu=id=>confirm('ลบ '+id+' ออกจากวิชานี้?')&&run('deleteStudent',S.pin,id,S.code).then(r=>{if(ok(r))reload();}).catch(fail);
+A.saveasg=()=>{const c=$('a-c').value;if(!$('a-t').value.trim())return toast('กรอกชื่อชิ้นงาน',1);if(c!=='collect'&&!$('a-d').value)return toast('กำหนดวันส่งงาน',1);
+ run('saveAssignment',S.pin,{id:$('a-id').value.trim(),subjectCode:S.code,title:$('a-t').value.trim(),category:c,maxScore:$('a-m').value,deadline:$('a-d').value,status:$('a-s').value,description:$('a-ds').value.trim()}).then(r=>{if(ok(r)){reload();load();}}).catch(fail);};
+A.editasg=id=>{const a=S.dash.assignments.find(x=>x.id===id);$('a-id').value=a.id;$('a-t').value=a.title;$('a-c').value=a.category;$('a-m').value=a.maxScore;$('a-d').value=a.deadline||'';$('a-s').value=a.status;$('a-ds').value=a.description||'';$('a-c').onchange();window.scrollTo({top:0,behavior:'smooth'});};
+A.delasg=id=>confirm('ลบชิ้นงาน '+id+' ?')&&run('deleteAssignment',S.pin,id).then(r=>{if(ok(r)){reload();load();}}).catch(fail);
+A.grade=id=>run('getAssignmentSubmissions',S.pin,id).then(r=>{if(!r.success)return toast(r.message,1);S.gid=id;const col=r.assignment.category==='collect',g=$('gp'),mx=esc(r.assignment.maxScore);g.hidden=false;
+ g.innerHTML=`<h3>${col?'ลงคะแนนเก็บ':'ตรวจ'}: ${esc(r.assignment.title)} (เต็ม ${mx})</h3>${col?'<p class="mut">กรอกคะแนนให้นักเรียนแต่ละคนได้เลยโดยไม่ต้องรอส่งงาน (เว้นว่าง = ยังไม่ลงคะแนน)</p>':''}<div class="tw"><table><tr><th>รหัส</th><th>ชื่อ</th>${col?'':'<th>สถานะ</th><th>ไฟล์</th>'}<th>คะแนน</th><th>ความเห็น</th></tr>${r.students.map(s=>{const can=col||s.submitted;return `<tr data-id="${esc(s.id)}"><td>${esc(s.id)}</td><td>${esc(s.name)}</td>${col?'':`<td>${s.submitted?`<span class="b ${s.score===''?'pending':'graded'}">${s.score===''?'รอตรวจ':'ตรวจแล้ว'}</span><br><small>${esc(s.at)} ${esc(s.status)}</small>`:'<span class="b none">ยังไม่ส่ง</span>'}</td><td>${s.files.map(link).join('<br>')}</td>`}<td>${can?`<input class="in sm" data-f="score" type="number" step="0.5" min="0" max="${mx}" value="${esc(s.score)}">`:'-'}</td><td>${can?`<input class="in" data-f="fb" maxlength="300" value="${esc(s.feedback)}">`:''}</td></tr>`}).join('')}</table></div><p><button class="btn g" data-a="savegr">💾 บันทึกคะแนน</button> <button class="btn s" data-a="closegp">ปิด</button></p>`;g.scrollIntoView({behavior:'smooth'});}).catch(fail);
+A.closegp=()=>$('gp').hidden=true;
+A.savegr=()=>{const list=[...document.querySelectorAll('#gp tr[data-id]')].map(tr=>({studentId:tr.dataset.id,score:(tr.querySelector('[data-f=score]')||{}).value,feedback:(tr.querySelector('[data-f=fb]')||{}).value})).filter(x=>x.score!==''&&x.score!==undefined);
+ if(!list.length)return toast('ยังไม่ได้กรอกคะแนน',1);run('saveAssignmentGrades',S.pin,S.gid,list).then(r=>{if(ok(r)){A.grade(S.gid);book();}}).catch(fail);};
+
+/* ---------- แอดมิน ---------- */
+A.alogin=()=>{const p=P.a;if(p.v.length<PL){p.shake();return toast('กรอก PIN ให้ครบ '+PL+' หลัก',1);}const pin=p.v;
+ run('adminLogin',pin).then(d=>{if(!d.success){p.clear();p.shake();return toast(d.message,1);}S.apin=pin;p.clear();$('a-gate').hidden=true;$('a-app').hidden=false;admDash(d);}).catch(fail);};
+A.alogout=()=>{S.apin='';$('a-app').hidden=true;$('a-gate').hidden=false;};
+const admReload=()=>run('adminLogin',S.apin).then(d=>{if(ok(d))admDash(d);}).catch(fail);
+function admDash(d){S.adm=d;const u=d.users,c=d.counts||{};
+ $('a-stats').innerHTML=[['👨‍🎓','blue','ครูผู้สอน',u.teachers.length],['👥','teal','นักเรียน',u.students.length],['📚','violet','รายวิชา',c.subjects||0],['📁','amber','งานที่ส่ง',c.submissions||0]].map(x=>`<div class="stat">${ic(x[0],'c-'+x[1])}<b>${x[3]}</b>${x[2]}</div>`).join('');
+ S.bn=(d.banners||[]).slice();bnDraw();$('as-t').value=d.settings.title;$('as-g').value=d.settings.tagline||'';$('as-s').value=d.settings.school;$('as-m').value=d.settings.semester;
+ $('as-lp').hidden=!d.settings.logo;if(d.settings.logo)$('as-lp').src=d.settings.logo;admRender();}
+A.atab=t=>{$('am-u').hidden=t!=='u';$('am-b').hidden=t!=='b';$('am-s').hidden=t!=='s';document.querySelectorAll('#a-tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===t));};
+A.afilter=(v,b)=>{S.af=v;b.parentNode.querySelectorAll('.pill').forEach(x=>x.classList.toggle('on',x===b));admRender();};
+function admRender(){if(!S.adm)return;const q=$('as-q').value.trim().toLowerCase(),u=S.adm.users;
+ const all=[...u.teachers.map(x=>({...x,role:'teacher'})),...u.students.map(x=>({...x,role:'student'}))].filter(x=>(S.af==='all'||x.role===S.af)&&(!q||(x.id+' '+(x.prefix||'')+x.name+' '+(x.surname||'')).toLowerCase().includes(q)));
+ $('ulist').innerHTML=`<table><tr><th>ประเภท</th><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>ชั้น / เลขที่</th><th></th></tr>${all.map(x=>`<tr><td><span class="b ${x.role==='teacher'?'t':'ok'}">${x.role==='teacher'?'ครู':'นักเรียน'}</span></td><td>${esc(x.id)}</td><td>${esc((x.prefix||'')+x.name+' '+(x.surname||''))}</td><td>${x.role==='student'?esc(x.classRoom||'')+' / '+esc(x.number||''):'-'}</td><td class="row">${x.role==='teacher'?`<button class="btn a" data-a="upin" data-v="${esc(x.id)}">🔑 รีเซ็ต PIN</button>`:''}<button class="btn s" data-a="uedit" data-v="${x.role}:${esc(x.id)}">✏️</button><button class="btn r" data-a="udel" data-v="${x.role}:${esc(x.id)}">🗑️</button></td></tr>`).join('')||'<tr><td colspan=5>ไม่พบสมาชิก</td></tr>'}</table>`;}
+function uToggle(){const t=$('u-role').value==='teacher';document.querySelectorAll('#uf .us').forEach(e=>e.hidden=t);document.querySelectorAll('#uf .ut').forEach(e=>e.hidden=!t);$('u-idl').textContent=t?'รหัสครู / ชื่อผู้ใช้':'รหัสนักเรียน (5 หลัก)';}
+$('u-role').onchange=uToggle;
+A.unew=()=>{['id','pre','name','sur','cls','no','pin'].forEach(k=>$('u-'+k).value='');$('u-id').readOnly=false;$('u-role').disabled=false;$('u-role').value=S.af==='student'?'student':'teacher';uToggle();$('uf').hidden=false;$('uf').scrollIntoView({behavior:'smooth'});};
+A.uedit=v=>{const[r,id]=v.split(':'),x=(r==='teacher'?S.adm.users.teachers:S.adm.users.students).find(y=>y.id===id);
+ $('u-role').value=r;$('u-role').disabled=true;uToggle();$('u-id').value=x.id;$('u-id').readOnly=true;$('u-pre').value=x.prefix||'';$('u-name').value=x.name;$('u-sur').value=x.surname||'';$('u-cls').value=x.classRoom||'';$('u-no').value=x.number||'';$('u-pin').value='';$('uf').hidden=false;$('uf').scrollIntoView({behavior:'smooth'});};
+A.uclose=()=>$('uf').hidden=true;
+A.usave=()=>{const role=$('u-role').value,id=$('u-id').value.trim(),pin=$('u-pin').value;
+ if(!id||!$('u-name').value.trim())return toast('กรอกรหัสและชื่อให้ครบ',1);if(role==='student'&&!/^\d{5}$/.test(id))return toast('รหัสนักเรียนต้องเป็นตัวเลข 5 หลัก',1);if(pin&&!/^\d{6}$/.test(pin))return toast('PIN ต้องเป็นตัวเลข 6 หลัก',1);
+ run('adminSaveUser',S.apin,{role,id,prefix:$('u-pre').value.trim(),name:$('u-name').value.trim(),surname:$('u-sur').value.trim(),classRoom:$('u-cls').value.trim(),number:$('u-no').value.trim(),pin}).then(r=>{if(ok(r)){A.uclose();admReload();}}).catch(fail);};
+A.udel=v=>{const[r,id]=v.split(':');confirm('ลบสมาชิก '+id+' ?')&&run('adminDeleteUser',S.apin,r,id).then(x=>{if(ok(x))admReload();}).catch(fail);};
+A.asave=async()=>{try{const f=$('as-lf').files[0],np=$('as-p').value;
+ if(np&&!/^\d{6}$/.test(np))return toast('PIN ต้องเป็นตัวเลข 6 หลัก',1);if(f&&f.size>2*1048576)return toast('รูปโลโก้ต้องไม่เกิน 2 MB',1);
+ if(f&&!ok(await run('adminUploadLogo',S.apin,{mimeType:f.type,fileData:await b64(f)})))return;
+ const r=await run('adminSaveSettings',S.apin,{title:$('as-t').value,tagline:$('as-g').value,school:$('as-s').value,semester:$('as-m').value,newPin:np});
+ if(ok(r)){if(np)S.apin=np;$('as-p').value='';$('as-lf').value='';admReload();load();}}catch(e){fail(e);}};
+A.armlogo=()=>run('adminSaveSettings',S.apin,{clearLogo:true}).then(r=>{if(ok(r)){admReload();load();}}).catch(fail);
+
+A.upin=id=>{const x=S.adm.users.teachers.find(y=>y.id===id);confirm('รีเซ็ต PIN ของ '+id+' เป็น 123456 ?')&&run('adminSaveUser',S.apin,{...x,role:'teacher',pin:'123456'}).then(r=>{if(ok(r))admReload();}).catch(fail);};
+
+/* ---------- แอดมิน: จัดการภาพหน้าปก ---------- */
+S.bn=[];S.bi=-1;
+function bnDraw(){$('blist').innerHTML=S.bn.length?S.bn.map((b,i)=>`<div class="card bn"><span class="b">${i+1}</span>${okUrl(b.url)?`<img src="${esc(b.url)}" alt="">`:''}<div class="grow"><b>${esc(b.title||'(ไม่มีหัวข้อ)')}</b><div class="mut">${esc(b.subtitle||'')}</div></div>
+  <div class="row"><button class="pill" data-a="bmv" data-v="${i}:-1"${i?'':' disabled'} aria-label="เลื่อนขึ้น">▲</button><button class="pill" data-a="bmv" data-v="${i}:1"${i<S.bn.length-1?'':' disabled'} aria-label="เลื่อนลง">▼</button><button class="btn s" data-a="bedit" data-v="${i}">✏️ แก้ไข</button><button class="btn r" data-a="bdel" data-v="${i}">🗑️ ลบ</button></div></div>`).join(''):'<div class="card mut">ยังไม่มีภาพหน้าปก ระบบจะแสดงพื้นหลังสีเริ่มต้นพร้อมชื่อระบบ กด "เพิ่มภาพหน้าปก" เพื่อเริ่มต้น</div>';}
+const shrink=f=>new Promise((res,no)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,1600/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res({mimeType:'image/jpeg',fileData:c.toDataURL('image/jpeg',.82).split(',')[1]});};im.onerror=()=>no(new Error('อ่านไฟล์รูปภาพไม่ได้'));im.src=u;});
+const bnSave=()=>run('adminSaveBanners',S.apin,S.bn).then(r=>{if(ok(r)){bnDraw();load();return true;}}).catch(fail);
+A.bnew=()=>{S.bi=-1;$('bf-h').textContent='เพิ่มภาพหน้าปก';['f','u','t','s'].forEach(k=>$('bf-'+k).value='');$('bf-p').hidden=true;$('bf').hidden=false;$('bf').scrollIntoView({behavior:'smooth'});};
+A.bedit=i=>{const b=S.bn[+i];S.bi=+i;$('bf-h').textContent='แก้ไขภาพหน้าปกที่ '+(+i+1);$('bf-f').value='';$('bf-u').value=/^https:/.test(b.url)?b.url:'';$('bf-t').value=b.title||'';$('bf-s').value=b.subtitle||'';$('bf-p').src=b.url;$('bf-p').hidden=false;$('bf').hidden=false;$('bf').scrollIntoView({behavior:'smooth'});};
+A.bclose=()=>$('bf').hidden=true;
+A.bsave=async()=>{try{const f=$('bf-f').files[0];let url=$('bf-u').value.trim();
+ if(f){if(!/^image\//.test(f.type)||f.size>15*1048576)return toast('เลือกไฟล์รูปภาพขนาดไม่เกิน 15 MB',1);const r=await run('adminUploadBanner',S.apin,await shrink(f));if(!ok(r))return;url=r.url;}
+ else if(!url&&S.bi>=0)url=S.bn[S.bi].url;
+ if(!okUrl(url))return toast('เลือกไฟล์ภาพ หรือวางลิงก์ภาพที่ขึ้นต้นด้วย https://',1);
+ const b={id:S.bi>=0?S.bn[S.bi].id:'b'+Date.now(),url,title:$('bf-t').value.trim(),subtitle:$('bf-s').value.trim()};
+ if(S.bi>=0)S.bn[S.bi]=b;else S.bn.push(b);if(await bnSave())A.bclose();}catch(e){fail(e);}};
+A.bmv=v=>{const[i,d]=v.split(':').map(Number),j=i+d;if(j<0||j>=S.bn.length)return;[S.bn[i],S.bn[j]]=[S.bn[j],S.bn[i]];bnSave();};
+A.bdel=i=>{confirm('ลบภาพหน้าปกที่ '+(+i+1)+' ?')&&(S.bn.splice(+i,1),bnSave());};
+$('bf-f').onchange=e=>{const f=e.target.files[0];if(f){$('bf-p').src=URL.createObjectURL(f);$('bf-p').hidden=false;}};
+
+/* ไอคอน SVG แทน emoji (แปลงอัตโนมัติ) */
+const SVR={'🔍':'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>','📤':'<path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>','🔒':'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>','🎓':'<path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>',
+'🛡️':'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/>',
+'📎':'<path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/>','🚀':'<path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/>','👨‍🎓':'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+'📋':'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 13h6M9 17h4"/>','🎉':'<path d="m5 12 5 5L20 7"/>','✅':'<path d="m5 12 5 5L20 7"/>','❌':'<path d="M6 6l12 12M18 6 6 18"/>',
+'📊':'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>','📁':'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>','📚':'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z"/><path d="M19 19v2H6"/>',
+'👥':'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14a5 5 0 0 1 5 5"/>','➕':'<path d="M12 5v14M5 12h14"/>','📝':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>','✏️':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+'⬅️':'<path d="M19 12H5m0 0 6-6m-6 6 6 6"/>','👁️':'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>','🗑️':'<path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/>','💾':'<path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M8 3v6h8M8 21v-7h8v7"/>','📄':'<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5Z"/><path d="M14 3v5h5"/>','🔑':'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9m-3 3 3 3"/>','🖼️':'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 9"/>'};
+const CLR={'🗑':'c-rose','✏':'c-amber','📝':'c-violet','👁':'c-teal','📊':'c-green','📁':'c-slate','📄':'c-slate','⬅':'c-slate','🚀':'c-green','💾':'c-violet','📤':'c-green','🔍':'','🔒':'c-amber','📎':'c-slate','🛡':'c-violet','🔑':'c-amber','🖼':'c-teal'};
+const nk=k=>k.replace(/\uFE0F/g,''),SV=Object.fromEntries(Object.entries(SVR).map(([k,v])=>[nk(k),v]));
+const EM=/^\s*(\p{Extended_Pictographic}\uFE0F?(?:\u200d\p{Extended_Pictographic}\uFE0F?)*)\s*/u;
+const svg=k=>SV[nk(k)]?`<svg viewBox="0 0 24 24" aria-hidden="true">${SV[nk(k)]}</svg>`:null;
+function deco(){document.querySelectorAll('.i3d .g').forEach(g=>{const x=svg(g.textContent);if(x)g.outerHTML=x;});
+ const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>/^(SCRIPT|STYLE|TEXTAREA|OPTION|SELECT|TITLE)$/.test(n.parentNode.nodeName)||n.parentNode.closest('.i3d,#toasts,.demo')?2:1}),l=[];let n;while(n=w.nextNode())l.push(n);
+ l.forEach(t=>{const m=EM.exec(t.nodeValue);if(!m||!SV[nk(m[1])])return;const s=document.createElement('span');s.className='i3d '+(CLR[nk(m[1])]||'');s.innerHTML=svg(m[1]);t.parentNode.insertBefore(s,t);t.nodeValue=' '+t.nodeValue.slice(m[0].length);});}
+deco();let rq;new MutationObserver(()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(deco);}).observe(document.body,{childList:true,subtree:true});
+uToggle();load();
+</script></body></html>
